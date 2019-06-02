@@ -1,5 +1,5 @@
 //
-//  AutomaticallyResizedLayout.swift
+//  PhotoCollectionViewLayout.swift
 //  customCollectionViewLayout
 //
 //  Created by Igor Chernyshov on 02/06/2019.
@@ -8,62 +8,67 @@
 
 import UIKit
 
-protocol AutomaticallyResizedLayoutDelegate: class {
-	func collectionView(_ collectionView:UICollectionView, heightForPhotoAtIndexPath indexPath:IndexPath) -> CGFloat
+protocol PhotoCollectionViewLayoutDelegate: class {
+	func ratio(forItemAt indexPath: IndexPath) -> CGFloat
 }
 
-class AutomaticallyResizedLayout: UICollectionViewLayout {
-	weak var delegate: AutomaticallyResizedLayoutDelegate!
+class PhotoCollectionViewLayout: UICollectionViewLayout {
 	
-	fileprivate var numberOfColumns = 2
-	fileprivate var cellPadding: CGFloat = 6
+	weak var delegate: PhotoCollectionViewLayoutDelegate?
 	
-	fileprivate var cache = [UICollectionViewLayoutAttributes]()
-	
-	fileprivate var contentHeight: CGFloat = 0
-	
-	fileprivate var contentWidth: CGFloat {
-		guard let collectionView = collectionView else {
-			return 0
-		}
-		let insets = collectionView.contentInset
-		return collectionView.bounds.width - (insets.left + insets.right)
-	}
+	private var cache: [IndexPath: UICollectionViewLayoutAttributes] = [:]
 	
 	override var collectionViewContentSize: CGSize {
-		return CGSize(width: contentWidth, height: contentHeight)
+		var maxX: CGFloat = 0.0
+		var maxY: CGFloat = 0.0
+		for attribute in self.cache.values {
+			if maxX < attribute.frame.maxX {
+				maxX = attribute.frame.maxX
+			}
+			if maxY < attribute.frame.maxY {
+				maxY = attribute.frame.maxY
+			}
+		}
+		return CGSize(width: maxX, height: maxY)
 	}
 	
 	override func prepare() {
-		guard cache.isEmpty == true, let collectionView = collectionView else {
-			return
-		}
+		super.prepare()
+		self.cache = [:]
+		guard let collectionView = self.collectionView, let delegate = self.delegate else {	return }
 		
-		let columnWidth = contentWidth / CGFloat(numberOfColumns)
-		var xOffset = [CGFloat]()
-		for column in 0 ..< numberOfColumns {
-			xOffset.append(CGFloat(column) * columnWidth)
-		}
-		var column = 0
-		var yOffset = [CGFloat](repeating: 0, count: numberOfColumns)
+		let numberOfItems = collectionView.numberOfItems(inSection: 0)
+		let cellWidth = collectionView.frame.width / 2
 		
-		for item in 0 ..< collectionView.numberOfItems(inSection: 0) {
-			
-			let indexPath = IndexPath(item: item, section: 0)
-			
-			let photoHeight = delegate.collectionView(collectionView, heightForPhotoAtIndexPath: indexPath)
-			let height = cellPadding * 2 + photoHeight
-			let frame = CGRect(x: xOffset[column], y: yOffset[column], width: columnWidth, height: height)
-			let insetFrame = frame.insetBy(dx: cellPadding, dy: cellPadding)
-			
+		var firstColumnHeight: CGFloat = 0.0
+		var secondColumnHeight: CGFloat = 0.0
+		var allAttributes: [IndexPath: UICollectionViewLayoutAttributes] = [:]
+		for itemIndex in 0..<numberOfItems {
+			let indexPath = IndexPath(item: itemIndex, section: 0)
+			let ratio = delegate.ratio(forItemAt: indexPath)
+			let cellHeight = cellWidth / ratio
 			let attributes = UICollectionViewLayoutAttributes(forCellWith: indexPath)
-			attributes.frame = insetFrame
-			cache.append(attributes)
+			let isForFirstColumn = firstColumnHeight <= secondColumnHeight
+			let x = isForFirstColumn ? 0.0 : cellWidth
+			let y = isForFirstColumn ? firstColumnHeight : secondColumnHeight
+			attributes.frame = CGRect(x: x, y: y, width: cellWidth, height: cellHeight)
+			allAttributes[indexPath] = attributes
 			
-			contentHeight = max(contentHeight, frame.maxY)
-			yOffset[column] = yOffset[column] + height
-			
-			column = column < (numberOfColumns - 1) ? (column + 1) : 0
+			if isForFirstColumn {
+				firstColumnHeight += cellHeight
+			} else {
+				secondColumnHeight += cellHeight
+			}
 		}
+		self.cache = allAttributes
+	}
+	
+	override func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]? {
+		return self.cache.values.filter { $0.frame.intersects(rect) }
+	}
+	
+	override func layoutAttributesForItem(at indexPath: IndexPath) -> UICollectionViewLayoutAttributes? {
+		return self.cache[indexPath]
 	}
 }
+

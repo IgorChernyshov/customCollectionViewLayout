@@ -27,6 +27,7 @@ class ViewController: UIViewController {
 		collectionView.dataSource = self
 		collectionView.register(PhotoCell.self, forCellWithReuseIdentifier: "reuseID")
 		collectionView.backgroundColor = UIColor(red: 41.0/255.0, green: 40.0/255.0, blue: 52.0/255.0, alpha: 1)
+		
 		self.view.addSubview(collectionView)
 	}
 	

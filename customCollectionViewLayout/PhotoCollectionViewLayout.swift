@@ -38,26 +38,26 @@ class PhotoCollectionViewLayout: UICollectionViewLayout {
 		guard let collectionView = self.collectionView, let delegate = self.delegate else {	return }
 		
 		let numberOfItems = collectionView.numberOfItems(inSection: 0)
-		let cellWidth = collectionView.frame.width / 2
-		
-		var firstColumnHeight: CGFloat = 0.0
-		var secondColumnHeight: CGFloat = 0.0
+		let cellHeight = collectionView.frame.height / 2
+
+		var firstRowWidth: CGFloat = 0.0
+		var secondRowWidth: CGFloat = 0.0
 		var allAttributes: [IndexPath: UICollectionViewLayoutAttributes] = [:]
 		for itemIndex in 0..<numberOfItems {
 			let indexPath = IndexPath(item: itemIndex, section: 0)
 			let ratio = delegate.ratio(forItemAt: indexPath)
-			let cellHeight = cellWidth / ratio
+			let cellWidth = cellHeight * ratio
 			let attributes = UICollectionViewLayoutAttributes(forCellWith: indexPath)
-			let isForFirstColumn = firstColumnHeight <= secondColumnHeight
-			let x = isForFirstColumn ? 0.0 : cellWidth
-			let y = isForFirstColumn ? firstColumnHeight : secondColumnHeight
+			let isForFirstRow = firstRowWidth <= secondRowWidth
+			let x = isForFirstRow ? firstRowWidth : secondRowWidth
+			let y = isForFirstRow ? 0.0 : cellHeight
 			attributes.frame = CGRect(x: x, y: y, width: cellWidth, height: cellHeight)
 			allAttributes[indexPath] = attributes
 			
-			if isForFirstColumn {
-				firstColumnHeight += cellHeight
+			if isForFirstRow {
+				firstRowWidth += cellWidth
 			} else {
-				secondColumnHeight += cellHeight
+				secondRowWidth += cellWidth
 			}
 		}
 		self.cache = allAttributes

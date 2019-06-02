@@ -38,10 +38,10 @@ class PhotoCollectionViewLayout: UICollectionViewLayout {
 		guard let collectionView = self.collectionView, let delegate = self.delegate else {	return }
 		
 		let numberOfItems = collectionView.numberOfItems(inSection: 0)
-		let cellHeight = collectionView.frame.height / 2
+		let cellHeight = (collectionView.frame.height / 2) - 15.0
 
-		var firstRowWidth: CGFloat = 0.0
-		var secondRowWidth: CGFloat = 0.0
+		var firstRowWidth: CGFloat = 10.0
+		var secondRowWidth: CGFloat = 10.0
 		var allAttributes: [IndexPath: UICollectionViewLayoutAttributes] = [:]
 		for itemIndex in 0..<numberOfItems {
 			let indexPath = IndexPath(item: itemIndex, section: 0)
@@ -50,14 +50,14 @@ class PhotoCollectionViewLayout: UICollectionViewLayout {
 			let attributes = UICollectionViewLayoutAttributes(forCellWith: indexPath)
 			let isForFirstRow = firstRowWidth <= secondRowWidth
 			let x = isForFirstRow ? firstRowWidth : secondRowWidth
-			let y = isForFirstRow ? 0.0 : cellHeight
+			let y = isForFirstRow ? 10.0 : cellHeight + 20.0
 			attributes.frame = CGRect(x: x, y: y, width: cellWidth, height: cellHeight)
 			allAttributes[indexPath] = attributes
 			
 			if isForFirstRow {
-				firstRowWidth += cellWidth
+				firstRowWidth += cellWidth + 10.0
 			} else {
-				secondRowWidth += cellWidth
+				secondRowWidth += cellWidth + 10.0
 			}
 		}
 		self.cache = allAttributes
